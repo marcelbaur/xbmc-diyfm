@@ -6,11 +6,12 @@ from datetime import datetime
 import xbmcplugin, xbmcgui, xbmc, xbmcaddon
 
 
-PROJECT_ROOT, tail = os.path.abspath(__file__).split('addon.py')
+ADDON = xbmcaddon.Addon(id='plugin.audio.diyfm')
+PROJECT_ROOT = ADDON.getAddonInfo('path')
 DATA_DIR = os.path.join(PROJECT_ROOT, 'resources', 'data')
+USER_DATA_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
 RADIO_FILE_PATH = os.path.join(DATA_DIR, 'groupRadioStations.xml')
-__settings__ = xbmcaddon.Addon(id='plugin.audio.diyfm')
-API_KEY = __settings__.getSetting('api_key')
+API_KEY = ADDON.getSetting('api_key')
 API_URL = "http://diy.fm/rest/v1/media/podcasts.xml?apiKey=%s" % (API_KEY)
 API_USER_URL = "https://diy.fm/rest/v1/user/token.xml?apiKey=%s" % (API_KEY)
 API_PERS_RADIO_URL = 'http://diy.fm/rest/v1/setting/overview.xml?apiKey=%s&userToken=%s'
@@ -93,28 +94,28 @@ def get_genres():
 
 def diyfmLogin():
     post_data = {}
-    post_data['user'] = __settings__.getSetting('diyfm_username')
-    post_data['password'] = __settings__.getSetting('diyfm_pass')
+    post_data['user'] = ADDON.getSetting('diyfm_username')
+    post_data['password'] = ADDON.getSetting('diyfm_pass')
     request = urllib2.Request(API_USER_URL, urllib.urlencode(post_data))
     request.get_method = lambda: 'POST'
     try:
         response = urllib2.urlopen(request)
     except urllib2.HTTPError as e:
         if e.code == 401:
-            xbmc.executebuiltin('Notification(%s, %s, %d)' % (__settings__.getAddonInfo('name'),
+            xbmc.executebuiltin('Notification(%s, %s, %d)' % (ADDON.getAddonInfo('name'),
                                                           'Please specify correct username and password', 5000))
         response = None
     if response:
         xml_resp = ET.fromstring(response.read())
         if xml_resp.find('./status/statusCode').text == '200':
-            __settings__.setSetting('access_token', xml_resp.find('userToken').text)
+            ADDON.setSetting('access_token', xml_resp.find('userToken').text)
         else:
-            xbmc.executebuiltin('Notification(%s, %s, %d)' % (__settings__.getAddonInfo('name'),
+            xbmc.executebuiltin('Notification(%s, %s, %d)' % (ADDON.getAddonInfo('name'),
                                                           'Please specify correct username and password', 5000))
 
 
 def get_personalize_stream():
-    request = urllib2.Request(API_PERS_RADIO_URL % (API_KEY, __settings__.getSetting('access_token')))
+    request = urllib2.Request(API_PERS_RADIO_URL % (API_KEY, ADDON.getSetting('access_token')))
     try:
         xml_response = ET.fromstring(urllib2.urlopen(request).read())
     except urllib2.HTTPError as e:
@@ -123,33 +124,33 @@ def get_personalize_stream():
             # get new user token
             diyfmLogin()
             # update userToken in request object
-            request = urllib2.Request(API_PERS_RADIO_URL % (API_KEY, __settings__.getSetting('access_token')))
+            request = urllib2.Request(API_PERS_RADIO_URL % (API_KEY, ADDON.getSetting('access_token')))
             xml_response = ET.fromstring(urllib2.urlopen(request).read())
-    return xml_response or None
+    return xml_response if not xml_response is None else None
 
 
 def index():
     for radio in load_station_groups():
         addDir(radio.attrib['title'], radio.attrib['name'], 'radioStream')
     addDir('Podcast', 'podcast', 'podcastIndex')
-    if __settings__.getSetting('diyfm_username') == '' or __settings__.getSetting('diyfm_pass') == '':
-        xbmc.executebuiltin('Notification(%s, %s, %d)' % (__settings__.getAddonInfo('name'),
+    if ADDON.getSetting('diyfm_username') == '' or ADDON.getSetting('diyfm_pass') == '':
+        xbmc.executebuiltin('Notification(%s, %s, %d)' % (ADDON.getAddonInfo('name'),
                                                           'You can indicate your login and password for diy.fm in the plugin settings', 10000))
     else:
-        if __settings__.getSetting('access_token') == '':
+        if ADDON.getSetting('access_token') == '':
             diyfmLogin()
         xml_response = get_personalize_stream()
         if not xml_response is None:
             for elem in xml_response.find('./settings'):
                 if elem.find('isDefaultMedia').text == 'true':
-                    __settings__.setSetting('default_stream', elem.find('./medium/name').text)
-                    __settings__.setSetting('def_stream_id', elem.find('./medium/id').text)
+                    ADDON.setSetting('default_stream', elem.find('./medium/name').text)
+                    ADDON.setSetting('def_stream_id', elem.find('./medium/id').text)
                     if elem.find('hasNewsOnFullHour').text == 'true':
-                        __settings__.setSetting('news_stream', elem.find('./newsMedium/name').text)
-                        __settings__.setSetting('news_stream_id', elem.find('./newsMedium/id').text)
+                        ADDON.setSetting('news_stream', elem.find('./newsMedium/name').text)
+                        ADDON.setSetting('news_stream_id', elem.find('./newsMedium/id').text)
                     break
-        if __settings__.getSetting('def_stream_id'):
-            station = load_station(__settings__.getSetting('def_stream_id'))
+        if ADDON.getSetting('def_stream_id'):
+            station = load_station(ADDON.getSetting('def_stream_id'))
             xbmc.Player().play(station.find('streamUrl').text)
 
 
