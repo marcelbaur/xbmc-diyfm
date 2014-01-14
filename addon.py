@@ -1,32 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import urllib, urllib2, re, sys, os, json
-import xml.etree.ElementTree as ET
 from datetime import datetime
+import xml.etree.ElementTree as ET
 import xbmcplugin, xbmcgui, xbmc, xbmcaddon
 
-
-ADDON = xbmcaddon.Addon(id='plugin.audio.diyfm')
-PROJECT_ROOT = ADDON.getAddonInfo('path')
-DATA_DIR = os.path.join(PROJECT_ROOT, 'resources', 'data')
-USER_DATA_DIR = xbmc.translatePath(ADDON.getAddonInfo('profile'))
-RADIO_FILE_PATH = os.path.join(DATA_DIR, 'groupRadioStations.xml')
-API_KEY = ADDON.getSetting('api_key')
-API_URL = "http://diy.fm/rest/v1/media/podcasts.xml?apiKey=%s" % (API_KEY)
-API_USER_URL = "https://diy.fm/rest/v1/user/token.xml?apiKey=%s" % (API_KEY)
-API_PERS_RADIO_URL = 'http://diy.fm/rest/v1/setting/overview.xml?apiKey=%s&userToken=%s'
-DATE_FORMAT = '%d-%m-%Y'
-
-
-def parameters_string_to_dict(parameters):
-    paramDict = {}
-    if parameters:
-        paramPairs = parameters[1:].split("&")
-        for paramsPair in paramPairs:
-            paramSplits = paramsPair.split('=')
-            if (len(paramSplits)) == 2:
-                paramDict[paramSplits[0]] = paramSplits[1]
-    return paramDict
+from resources.lib import *
 
 
 def load_station_groups():
@@ -102,19 +81,18 @@ def diyfmLogin():
         response = urllib2.urlopen(request)
     except urllib2.HTTPError as e:
         if e.code == 401:
-            xbmc.executebuiltin('Notification(%s, %s, %d)' % (ADDON.getAddonInfo('name'),
-                                                          'Please specify correct username and password', 5000))
+            show_notification(ADDON.getAddonInfo('name'), 'Please specify correct username and password', 5000)
         response = None
     if response:
         xml_resp = ET.fromstring(response.read())
         if xml_resp.find('./status/statusCode').text == '200':
             ADDON.setSetting('access_token', xml_resp.find('userToken').text)
         else:
-            xbmc.executebuiltin('Notification(%s, %s, %d)' % (ADDON.getAddonInfo('name'),
-                                                          'Please specify correct username and password', 5000))
+            show_notification(ADDON.getAddonInfo('name'), 'Please specify correct username and password', 5000)
 
 
 def get_personalize_stream():
+    xml_response = None
     request = urllib2.Request(API_PERS_RADIO_URL % (API_KEY, ADDON.getSetting('access_token')))
     try:
         xml_response = ET.fromstring(urllib2.urlopen(request).read())
@@ -126,7 +104,7 @@ def get_personalize_stream():
             # update userToken in request object
             request = urllib2.Request(API_PERS_RADIO_URL % (API_KEY, ADDON.getSetting('access_token')))
             xml_response = ET.fromstring(urllib2.urlopen(request).read())
-    return xml_response if not xml_response is None else None
+    return xml_response
 
 
 def index():
@@ -134,8 +112,7 @@ def index():
         addDir(radio.attrib['title'], radio.attrib['name'], 'radioStream')
     addDir('Podcast', 'podcast', 'podcastIndex')
     if ADDON.getSetting('diyfm_username') == '' or ADDON.getSetting('diyfm_pass') == '':
-        xbmc.executebuiltin('Notification(%s, %s, %d)' % (ADDON.getAddonInfo('name'),
-                                                          'You can indicate your login and password for diy.fm in the plugin settings', 10000))
+        show_notification(ADDON.getAddonInfo('name'), 'You can indicate your login and password for diy.fm in the plugin settings', 10000)
     else:
         if ADDON.getSetting('access_token') == '':
             diyfmLogin()
@@ -230,7 +207,7 @@ def check_url(url):
     return not response is None
 
 
-def addItem(name, url, iconimage, podcast_feed=''):
+def addItem(name, url, iconimage):
     item = xbmcgui.ListItem(name, iconImage=iconimage if iconimage else '',
                             thumbnailImage=iconimage if iconimage else '')
     item.setInfo(type='Music', infoLabels={'Title': name})
