@@ -53,16 +53,15 @@ def get_genres():
     xml = ET.fromstring(file.read())
     file.close()
     all_genres = xml.findall('./podcasts/podcast/genre')
-    ge = {}
+    unique_genres = {}
     grouped_genres = {'En': [], 'De': [], 'Fr': [], 'It': [], 'Rm': []}
     for genre in all_genres:
-        if not genre.find('id').text in ge:
-            ge[genre.find('id').text] = genre
-
-    for g_id, genre in ge.items():
+        if not genre.find('id').text in unique_genres:
+            unique_genres[genre.find('id').text] = genre
+    for genre_id, genre in unique_genres.items():
         for lang in genre:
             if lang.tag != 'id':
-                grouped_genres[lang.tag[-2:]].append({'id': g_id, 'title': unicode(lang.text)})
+                grouped_genres[lang.tag[-2:]].append({'id': genre_id, 'title': unicode(lang.text)})
 
     for key in grouped_genres.keys():
         grouped_genres[key] = sorted(grouped_genres[key], key=lambda k: k['title'])
@@ -93,7 +92,7 @@ def diyfmLogin():
 
 def get_personalize_stream():
     xml_response = None
-    request = urllib2.Request(API_PERS_RADIO_URL % (API_KEY, ADDON.getSetting('access_token')))
+    request = urllib2.Request(API_PERS_RADIO_URL % ({'api_key': API_KEY, 'user_token': ADDON.getSetting('access_token')}))
     try:
         xml_response = ET.fromstring(urllib2.urlopen(request).read())
     except urllib2.HTTPError as e:
@@ -102,7 +101,7 @@ def get_personalize_stream():
             # get new user token
             diyfmLogin()
             # update userToken in request object
-            request = urllib2.Request(API_PERS_RADIO_URL % (API_KEY, ADDON.getSetting('access_token')))
+            request = urllib2.Request(API_PERS_RADIO_URL % ({'api_key': API_KEY, 'user_token': ADDON.getSetting('access_token')}))
             xml_response = ET.fromstring(urllib2.urlopen(request).read())
     return xml_response
 
@@ -211,33 +210,31 @@ def addItem(name, url, iconimage):
     item = xbmcgui.ListItem(name, iconImage=iconimage if iconimage else '',
                             thumbnailImage=iconimage if iconimage else '')
     item.setInfo(type='Music', infoLabels={'Title': name})
-    xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=url, listitem=item)
+    xbmcplugin.addDirectoryItem(handle=PLUGIN_HANDLE, url=url, listitem=item)
 
 
 def addDir(name, url, mode, dir_img=''):
-    u = sys.argv[0] + "?url=" + urllib.quote_plus(url) + "&mode=" + str(mode)
-    ok = True
-    liz = xbmcgui.ListItem(name, iconImage=dir_img if dir_img else '', thumbnailImage='')
-    liz.setInfo(type="Music", infoLabels={"Title": name})
-    ok = xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True)
+    url = sys.argv[0] + "?url=" + urllib.quote_plus(url) + "&mode=" + str(mode)
+    list_item = xbmcgui.ListItem(name, iconImage=dir_img if dir_img else '', thumbnailImage='')
+    list_item.setInfo(type="Music", infoLabels={"Title": name})
+    ok = xbmcplugin.addDirectoryItem(handle=PLUGIN_HANDLE, url=url, listitem=list_item, isFolder=True)
     return ok
 
 
 params = parameters_string_to_dict(sys.argv[2])
-mode = None
 
 mode = params.get('mode')
 url = params.get('url')
 
 if mode is None:
     index()
-elif mode == 'radioStream':
-    radioStreams(url)
 elif mode == 'podcastIndex':
     podcastIndex()
+elif mode == 'radioStream':
+    radioStreams(url)
 elif mode == 'podcastGenre':
     podcastGenreItems(url)
 elif mode == 'podcastItem':
     podcastItems(url)
 
-xbmcplugin.endOfDirectory(int(sys.argv[1]))
+xbmcplugin.endOfDirectory(PLUGIN_HANDLE)
