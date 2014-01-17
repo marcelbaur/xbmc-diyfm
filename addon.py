@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import urllib, urllib2, re, sys, os, json
+import urllib, urllib2, re, json
 from datetime import datetime
 import xml.etree.ElementTree as ET
-import xbmcplugin, xbmcgui, xbmc, xbmcaddon
+import xbmcplugin, xbmcgui, xbmcvfs
 
 from resources.lib import *
 
@@ -42,14 +42,14 @@ def load_podcast_xml():
         response = None
     if response:
         file_name = '%s.xml' % (datetime.now().strftime(DATE_FORMAT))
-        file = open(os.path.join(DATA_DIR, file_name), 'wb')
+        file = open(os.path.join(USER_DATA_DIR, file_name), 'wb')
         file.write(response.read())
         file.close()
 
 
 def get_genres():
     podcast_file = '%s.xml' % (datetime.now().strftime(DATE_FORMAT))
-    file = open(os.path.join(DATA_DIR, podcast_file), 'r')
+    file = open(os.path.join(USER_DATA_DIR, podcast_file), 'r')
     xml = ET.fromstring(file.read())
     file.close()
     all_genres = xml.findall('./podcasts/podcast/genre')
@@ -66,7 +66,7 @@ def get_genres():
     for key in grouped_genres.keys():
         grouped_genres[key] = sorted(grouped_genres[key], key=lambda k: k['title'])
 
-    with open(os.path.join(DATA_DIR, 'genres.json'), 'w') as outfile:
+    with open(os.path.join(USER_DATA_DIR, 'genres.json'), 'w') as outfile:
         json.dump(grouped_genres, outfile)
 
 
@@ -136,18 +136,20 @@ def radioStreams(url):
 
 
 def podcastIndex():
+    if not xbmcvfs.exists(USER_DATA_DIR):
+        xbmcvfs.mkdir(USER_DATA_DIR)
     file_name = '%s.xml' % (datetime.now().strftime(DATE_FORMAT))
     pattern = re.compile(r'^[0-9]{2}-[0-9]{2}-[0-9]{4}.xml$')
     is_exist = False
-    for file in os.listdir(DATA_DIR):
+    for file in xbmcvfs.listdir(USER_DATA_DIR)[1]:  # get files list
         if pattern.match(file) and file != file_name:
-            os.remove(os.path.join(DATA_DIR, file))
+            xbmcvfs.delete(os.path.join(USER_DATA_DIR, file))
         elif file == file_name:
             is_exist = True
     if not is_exist:
         load_podcast_xml()
         get_genres()
-    genres_file = os.path.join(DATA_DIR, 'genres.json')
+    genres_file = os.path.join(USER_DATA_DIR, 'genres.json')
     file = open(genres_file, 'r')
     json_genres = json.load(file)
     file.close()
@@ -165,7 +167,7 @@ def podcastIndex():
 
 def podcastGenreItems(genre_id):
     podcast_file = '%s.xml' % (datetime.now().strftime(DATE_FORMAT))
-    file = open(os.path.join(DATA_DIR, podcast_file), 'r')
+    file = open(os.path.join(USER_DATA_DIR, podcast_file), 'r')
     podcast_xml = ET.parse(file)
     root = podcast_xml.getroot()
     for podcast in root.find('podcasts'):
