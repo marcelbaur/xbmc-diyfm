@@ -11,10 +11,23 @@
     </extension>
     <extension point="xbmc.service" library="service.py" start="startup" />
     <extension point="xbmc.addon.metadata">
+        <summary lang="de">Hören Sie die schweizer Radioprogramme und Podcasts der SRG SSR</summary>
+        <summary lang="en">Listen to Swiss radio stations and podcasts of SRG SSR</summary>
+        <summary lang="fr">Écoutez les programmes et podcasts SRG SSR </summary>
+        <summary lang="it">Ascoltare i programmi radio svizzere e podcast SRG SSR</summary>
+	<language>en de fr it</language>
+	<forum></forum>
+	<website>http://diy.fm</website>
+	<source>https://github.com/marcelbaur/xbmc-diyfm</source>
+	<email>support@diy.fm</email>
+	<disclaimer lang="en">Personalized content only available with free diy.fm account</disclaimer>
+	<disclaimer lang="de">Personalisierte Inhalte nur mittels kostenlosem diy.fm Account möglich</disclaimer>
+	<disclaimer lang="fr">Contenu personnalisé qu'avec connexion libre diy.fm</disclaimer>
+	<disclaimer lang="it">Contenuti personalizzati solo con login libera</disclaimer>
         <platform>all</platform>
-        <description lang="de">Hören Sie die schweizer Radioprogramme und Podcasts der SRG SSR</description>
-        <description lang="en">Listen to Swiss radio stations and podcasts of SRG SSR</description>
-        <description lang="fr">Écoutez les programmes et podcasts SRG SSR </description>
-        <description lang="it">Ascoltare i programmi radio svizzere e podcast SRG SSR</description>
+        <description lang="de">Hören Sie die schweizer Radioprogramme und Podcasts der SRG SSR. Personalisiertes diy.fm radio</description>
+        <description lang="en">Listen to Swiss radio stations and podcasts of SRG SSR. Personalized diy.fm radio</description>
+        <description lang="fr">Écoutez les programmes et podcasts SRG SSR. Radio personnalisé diy.fm </description>
+        <description lang="it">Ascoltare i programmi radio svizzere e podcast SRG SSR. Radio personalizzato diy.fm</description>
     </extension>
 </addon>
