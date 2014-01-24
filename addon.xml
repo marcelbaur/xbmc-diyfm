@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <addon id="plugin.audio.diyfm"
        name="diy.fm"
-       version="0.0.1"
+       version="0.0.3"
        provider-name="diy.fm">
     <requires>
         <import addon="xbmc.python" version="2.1.0"/>
@@ -16,6 +16,7 @@
         <summary lang="fr">Écoutez les programmes et podcasts SRG SSR </summary>
         <summary lang="it">Ascoltare i programmi radio svizzere e podcast SRG SSR</summary>
 	<language>en de fr it</language>
+	<license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
 	<forum></forum>
 	<website>http://diy.fm</website>
 	<source>https://github.com/marcelbaur/xbmc-diyfm</source>
